@@ -898,7 +898,7 @@ st.markdown("---")
 
 # MAIN TABS
 tab_portfolio, tab_new_trade, tab_history, tab_tax = st.tabs(
-    ["📊 Holdings", "➕ New Trade", "📜 Trade History", "🧾 Realized P/L"]
+    ["📊Holdings", "➕New Trade", "📜Trade History", "🧾Realized P/L"]
 )
 
 # --- TAB 1: PORTFOLIO ---
@@ -1441,3 +1441,4 @@ with top_col2:
             hide_index=True,
             column_config=final_column_config,
         )
+
