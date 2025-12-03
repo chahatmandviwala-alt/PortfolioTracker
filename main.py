@@ -448,9 +448,9 @@ def add_derived_columns(
     return d
 
 
-def load_trades(base_ccy: str, recalc_fx: bool) -> pd.DataFrame:
-    if DATA_FILE.exists():
-        df = pd.read_csv(DATA_FILE, sep=";")
+def load_trades(base_ccy: str, recalc_fx: bool, data_file: Path) -> pd.DataFrame:
+    if data_file.exists():
+        df = pd.read_csv(data_file, sep=";")
     else:
         df = pd.DataFrame(columns=INPUT_COLS)
 
@@ -468,12 +468,12 @@ def load_trades(base_ccy: str, recalc_fx: bool) -> pd.DataFrame:
     return add_derived_columns(df[INPUT_COLS + ["_row"]], base_ccy=base_ccy, recalc_fx=recalc_fx)
 
 
-def save_trades(df: pd.DataFrame) -> None:
+def save_trades(df: pd.DataFrame, data_file: Path) -> None:
     to_save = df[INPUT_COLS].copy()
     to_save["trade_date"] = pd.to_datetime(
         to_save["trade_date"], errors="coerce"
     ).dt.strftime("%Y-%m-%d %H:%M")
-    to_save.to_csv(DATA_FILE, index=False, sep=";")
+    to_save.to_csv(data_file, index=False, sep=";")
 
 
 # ============ LIVE PRICE UPDATER ============
@@ -1479,6 +1479,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
