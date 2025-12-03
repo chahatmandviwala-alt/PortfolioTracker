@@ -759,19 +759,26 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # UI LAYOUT
 # =========================
 
-# If user is not logged in, show a simple login screen
-if not st.user.is_logged_in:
+# =========================
+# REAL LOGIN (Google OIDC)
+# =========================
+
+# Safely check if user is logged in.
+# getattr(...) returns False instead of crashing if "is_logged_in" doesn't exist.
+logged_in = getattr(st.user, "is_logged_in", False)
+
+if not logged_in:
     st.title("🔐 Portfolio Login")
     st.write("Please log in with your Google account to access your portfolio.")
 
     if st.button("Log in with Google"):
-        st.login()  # uses the [auth] config from secrets
-    st.stop()      # stop here until user logs in
+        st.login()   # uses [auth] from secrets.toml
+    st.stop()
 
-# After login, st.user contains info from Google
+# At this point, we assume user is logged in and st.user has attributes.
 user = st.user
 
-# Prefer email as identifier; fall back to sub if needed
+# Prefer email, fall back to sub
 user_id = getattr(user, "email", None) or getattr(user, "sub", None)
 
 if not user_id:
@@ -780,10 +787,7 @@ if not user_id:
 
 st.sidebar.write(f"Logged in as: **{user_id}**")
 
-# Use email/ID instead of typed username for per-user files
 DATA_FILE, SETTINGS_FILE = get_user_paths(user_id)
-
-# Load settings for THIS user
 _settings = load_settings(SETTINGS_FILE)
 _last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
 
@@ -1505,6 +1509,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
