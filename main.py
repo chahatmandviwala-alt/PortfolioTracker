@@ -12,6 +12,13 @@ import yfinance as yf
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
+st.set_page_config(
+    page_title="Portfolio Tracker",
+    page_icon="📈",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
 st.markdown("""
 <style>
 /* Hide the 'Press Enter to submit form' helper text everywhere */
@@ -24,13 +31,6 @@ st.markdown("""
 # =========================
 # CONFIG & STYLING
 # =========================
-
-st.set_page_config(
-    page_title="Portfolio Tracker",
-    page_icon="📈",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
 
 st.markdown("""
 <style>
@@ -1513,6 +1513,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
