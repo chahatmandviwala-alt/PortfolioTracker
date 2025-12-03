@@ -771,7 +771,8 @@ if "logged_in" not in st.session_state:
 if not st.session_state.logged_in:
     st.header("🪪 Login")
     username = st.text_input("Username", key="username_input").strip()
-
+    # <<< HERE is your helper text >>>
+    st.caption("Enter a username to load or create a portfolio.")
     if username:
         st.session_state.username = username
         st.session_state.logged_in = True
@@ -1508,6 +1509,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
