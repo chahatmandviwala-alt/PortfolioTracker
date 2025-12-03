@@ -785,7 +785,8 @@ if not user_id:
     st.stop()
 
 # For compatibility with the old code, we keep using `username`
-username = user_id
+# Extract the part before "@"
+username = user_id.split("@")[0]
 
 # Use this username to get per-user files
 DATA_FILE, SETTINGS_FILE = get_user_paths(username)
@@ -1510,6 +1511,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
