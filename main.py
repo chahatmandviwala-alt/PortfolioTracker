@@ -755,7 +755,7 @@ with st.sidebar:
 
     # --- Base settings ---
     base_ccy = st.text_input("Base Currency", value=_last_base).upper()
-    hide_values = st.toggle("Hide Portfolio Values", value=false)
+    hide_values = st.toggle("Hide Portfolio Values")
 
     # --- Refresh prices button ---
     if st.button("🔄 Refresh market value"):
@@ -1466,6 +1466,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
