@@ -759,13 +759,29 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # UI LAYOUT
 # =========================
 
-# --- User selection on MAIN PAGE ---
-st.header("🪪 Sign in")
-username = st.text_input("Username", key="username").strip()
+# =========================
+# USER LOGIN (only shown once)
+# =========================
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+
+# Show username input ONLY if not logged in
+if not st.session_state.logged_in:
+    st.header("🪪 Login")
+    username = st.text_input("Username", key="username_input").strip()
+
+    if username:
+        st.session_state.username = username
+        st.session_state.logged_in = True
+        st.rerun()   # reload page with login complete
+
+# After login: load username from session
+username = st.session_state.username
 
 if not username:
-    st.info("Enter a username to load or create a portfolio.")
-    st.stop()
+    st.stop()  # safety stop (shouldn't happen)
 
 # Map username -> file paths (per user)
 DATA_FILE, SETTINGS_FILE = get_user_paths(username)
@@ -1492,6 +1508,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
