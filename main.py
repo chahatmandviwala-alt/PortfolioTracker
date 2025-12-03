@@ -791,15 +791,13 @@ _last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
 with st.sidebar:
     st.header("⚙️ Settings")
 
-    # Base settings
     base_ccy = st.text_input(
         "Base Currency",
         value=_last_base,
-        key="base_ccy",          # give it its own key
+        key="base_ccy",
     ).upper()
     hide_values = st.toggle("Hide Portfolio Values", key="hide_values")
 
-    # Refresh prices button
     if st.button("🔄 Refresh market value"):
         if DATA_FILE.exists():
             raw = pd.read_csv(DATA_FILE, sep=";")
@@ -810,6 +808,8 @@ with st.sidebar:
         save_trades(updated, DATA_FILE)
         st.success("Market value updated.")
         st.rerun()
+
+    st.divider()
 
     st.divider()
 
@@ -1505,6 +1505,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
