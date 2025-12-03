@@ -157,10 +157,10 @@ st.markdown("""
 <style>
 
 div[data-testid="stTabs"] button {
-    padding-top: 4px !important;     /* default ~10px */
-    padding-bottom: 4px !important;
-    padding-left: 10px !important;
-    padding-right: 10px !important;
+    padding-top: 0px !important;     /* default ~10px */
+    padding-bottom: 6px !important;
+    padding-left: 0px !important;
+    padding-right: 0px !important;
 
     font-size: 0.85rem !important;   /* smaller label text */
     height: 30px !important;         /* reduce full tab height */
@@ -172,7 +172,7 @@ div[data-testid="stTabs"] button p {
 
 /* Optional: reduce gap between tabs a bit */
 div[data-testid="stTabs"] button + button {
-    margin-left: 0.5px !important;
+    margin-left: -6px !important;
 }
 
 </style>
@@ -1466,4 +1466,5 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
