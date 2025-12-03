@@ -760,42 +760,41 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # =========================
 
 # =========================
-# USER LOGIN (with "remember me" via URL)
+# USER LOGIN via URL PATH
 # =========================
 
-# Read ?user=... from URL (if present)
-params = st.experimental_get_query_params()
-url_username = params.get("user", [""])[0].strip() if params else ""
+# Get the path, e.g. "/alex"
+path = st.experimental_get_query_params().get('__streamlit_path', [""])[0]
+
+# Extract username from path
+# Example: "/alex" -> "alex"
+url_username = path.strip("/")
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = url_username or ""
 
-# If username came from URL, auto-log in
+# Auto login if username in URL
 if url_username and not st.session_state.logged_in:
     st.session_state.username = url_username
     st.session_state.logged_in = True
 
-# Show login only if not logged in yet
+# Show login box ONLY if not logged in
 if not st.session_state.logged_in:
     st.header("🪪 Login")
 
-    username_input = st.text_input(
-        "Username",
-        key="username_input",
-        value=url_username,
-    ).strip()
-
+    username_input = st.text_input("Username", key="username_input").strip()
     st.caption("Enter a username to load your portfolio.")
 
     if username_input:
         st.session_state.username = username_input
         st.session_state.logged_in = True
-        # Store username in URL -> ?user=...
-        st.experimental_set_query_params(user=username_input)
+        
+        # Redirect to /username
+        st.experimental_set_query_params(__streamlit_path=username_input)
         st.rerun()
 
-# After login: use stored username
+# After login
 username = st.session_state.username
 
 if not username:
@@ -1526,6 +1525,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
