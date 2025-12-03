@@ -787,8 +787,6 @@ if not user_id:
 # For compatibility with the old code, we keep using `username`
 username = user_id
 
-st.sidebar.write(f"**{username}**")
-
 # Use this username to get per-user files
 DATA_FILE, SETTINGS_FILE = get_user_paths(username)
 
@@ -848,6 +846,7 @@ with st.sidebar:
                 st.error(f"Failed to save uploaded file: {e}")
 
     st.divider()
+    st.sidebar.write(f"**{username}**")
     st.caption(f"Data Source: `{DATA_FILE}`")
 
 recalc_fx = base_ccy != _last_base
@@ -1511,6 +1510,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
