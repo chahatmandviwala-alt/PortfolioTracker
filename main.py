@@ -217,18 +217,18 @@ INPUT_COLS = [
 # SETTINGS PERSISTENCE
 # =========================
 
-def load_settings() -> dict:
-    if SETTINGS_FILE.exists():
+def load_settings(settings_file: Path) -> dict:
+    if settings_file.exists():
         try:
-            return json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
+            return json.loads(settings_file.read_text(encoding="utf-8"))
         except Exception:
             return {}
     return {}
 
 
-def save_settings(settings: dict) -> None:
+def save_settings(settings: dict, settings_file: Path) -> None:
     try:
-        SETTINGS_FILE.write_text(json.dumps(settings, indent=2), encoding="utf-8")
+        settings_file.write_text(json.dumps(settings, indent=2), encoding="utf-8")
     except Exception:
         # Failing to save settings should not crash the app
         pass
@@ -1479,6 +1479,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
