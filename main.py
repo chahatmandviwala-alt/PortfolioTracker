@@ -847,7 +847,7 @@ with st.sidebar:
                 st.error(f"Failed to save uploaded file: {e}")
 
     st.divider()
-    st.sidebar.write(f"**{username}**")
+    st.caption(f"Logged in as: `{username}`")
     st.caption(f"Data Source: `{DATA_FILE}`")
 
 recalc_fx = base_ccy != _last_base
@@ -1511,6 +1511,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
