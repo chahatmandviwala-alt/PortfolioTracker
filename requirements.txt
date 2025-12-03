@@ -1,7 +1,8 @@
-streamlit
+streamlit[auth]>=1.42
 pandas
 numpy
 requests
 altair
 plotly
 yfinance
+
