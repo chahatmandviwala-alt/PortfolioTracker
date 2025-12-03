@@ -760,39 +760,36 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # =========================
 
 # =========================
-# USER LOGIN via URL PATH
+# USER LOGIN (query param + remember in session)
 # =========================
 
-# Get the path, e.g. "/alex"
-path = st.experimental_get_query_params().get('__streamlit_path', [""])[0]
+params = st.experimental_get_query_params()
+initial_username = params.get("user", [""])[0].strip() if params else ""
 
-# Extract username from path
-# Example: "/alex" -> "alex"
-url_username = path.strip("/")
+if "username" not in st.session_state:
+    st.session_state.username = initial_username
 
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = url_username or ""
-
-# Auto login if username in URL
-if url_username and not st.session_state.logged_in:
-    st.session_state.username = url_username
-    st.session_state.logged_in = True
-
-# Show login box ONLY if not logged in
-if not st.session_state.logged_in:
+# If still no username, show login
+if not st.session_state.username:
     st.header("🪪 Login")
 
-    username_input = st.text_input("Username", key="username_input").strip()
+    username_input = st.text_input(
+        "Username",
+        key="username_input",
+        value=initial_username,
+    ).strip()
+
     st.caption("Enter a username to load your portfolio.")
 
     if username_input:
         st.session_state.username = username_input
-        st.session_state.logged_in = True
-        
-        # Redirect to /username
-        st.experimental_set_query_params(__streamlit_path=username_input)
+        # store in URL ?user=...
+        st.experimental_set_query_params(user=username_input)
         st.rerun()
+
+username = st.session_state.username
+if not username:
+    st.stop()
 
 # After login
 username = st.session_state.username
@@ -1525,6 +1522,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
