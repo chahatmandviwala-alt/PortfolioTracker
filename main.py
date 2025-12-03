@@ -848,9 +848,8 @@ with st.sidebar:
 
     st.divider()
     st.caption(f"Logged in as: `{username}`")
-
-if st.button("Logout", type="secondary", help="Sign out of your account"):
-    st.logout()
+        if st.button("🚪 Logout", use_container_width=True):
+        st.logout()
 
 recalc_fx = base_ccy != _last_base
 
@@ -1513,6 +1512,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
