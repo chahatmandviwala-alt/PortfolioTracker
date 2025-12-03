@@ -764,7 +764,7 @@ st.header("👤 User")
 username = st.text_input("Username", key="username").strip()
 
 if not username:
-    st.info("Enter a username to load your own portfolio.")
+    st.info("Enter a username to load or create a portfolio.")
     st.stop()
 
 # Map username -> file paths (per user)
@@ -1492,6 +1492,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
