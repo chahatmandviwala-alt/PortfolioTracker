@@ -764,7 +764,6 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # =========================
 
 # Safely check if user is logged in.
-# getattr(...) returns False instead of crashing if "is_logged_in" doesn't exist.
 logged_in = getattr(st.user, "is_logged_in", False)
 
 if not logged_in:
@@ -775,22 +774,27 @@ if not logged_in:
         st.login()   # uses [auth] from secrets.toml
     st.stop()
 
-# At this point, we assume user is logged in and st.user has attributes.
+# At this point, the user should be logged in
 user = st.user
 
-# Prefer email, fall back to sub
+# Prefer email as identifier; fall back to sub
 user_id = getattr(user, "email", None) or getattr(user, "sub", None)
 
 if not user_id:
     st.error("Could not determine your user identity from the login provider.")
     st.stop()
 
-st.sidebar.write(f"Logged in as: **{user_id}**")
+# For compatibility with the old code, we keep using `username`
+username = user_id
 
-DATA_FILE, SETTINGS_FILE = get_user_paths(user_id)
+st.sidebar.write(f"Logged in as: **{username}**")
+
+# Use this username to get per-user files
+DATA_FILE, SETTINGS_FILE = get_user_paths(username)
+
+# Load settings for THIS user
 _settings = load_settings(SETTINGS_FILE)
 _last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
-
 # --- Sidebar contents (only shown after username is set) ---
 with st.sidebar:
     st.header("⚙️ Settings")
@@ -1509,6 +1513,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
