@@ -760,29 +760,46 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # =========================
 
 # =========================
-# USER LOGIN (only shown once)
+# USER LOGIN (with "remember me" via URL)
 # =========================
+
+# Read ?user=... from URL (if present)
+params = st.experimental_get_query_params()
+url_username = params.get("user", [""])[0].strip() if params else ""
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
-    st.session_state.username = ""
+    st.session_state.username = url_username or ""
 
-# Show username input ONLY if not logged in
+# If username came from URL, auto-log in
+if url_username and not st.session_state.logged_in:
+    st.session_state.username = url_username
+    st.session_state.logged_in = True
+
+# Show login only if not logged in yet
 if not st.session_state.logged_in:
     st.header("🪪 Login")
-    username = st.text_input("Username", key="username_input").strip()
-    # <<< HERE is your helper text >>>
-    st.caption("Enter a username to load or create a portfolio.")
-    if username:
-        st.session_state.username = username
-        st.session_state.logged_in = True
-        st.rerun()   # reload page with login complete
 
-# After login: load username from session
+    username_input = st.text_input(
+        "Username",
+        key="username_input",
+        value=url_username,
+    ).strip()
+
+    st.caption("Enter a username to load your portfolio.")
+
+    if username_input:
+        st.session_state.username = username_input
+        st.session_state.logged_in = True
+        # Store username in URL -> ?user=...
+        st.experimental_set_query_params(user=username_input)
+        st.rerun()
+
+# After login: use stored username
 username = st.session_state.username
 
 if not username:
-    st.stop()  # safety stop (shouldn't happen)
+    st.stop()
 
 # Map username -> file paths (per user)
 DATA_FILE, SETTINGS_FILE = get_user_paths(username)
@@ -1509,6 +1526,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
