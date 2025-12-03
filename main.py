@@ -178,10 +178,23 @@ div[data-testid="stTabs"] button + button {
 </style>
 """, unsafe_allow_html=True)
 
+DATA_DIR = Path("data")
+DATA_DIR.mkdir(exist_ok=True)
 
-DATA_FILE = Path("trades.csv")
-SETTINGS_FILE = Path("settings.json")
 DEFAULT_BASE_CCY = "SEK"
+
+def get_user_paths(username: str) -> tuple[Path, Path]:
+    """
+    Map a username -> user-specific trades/settings files.
+    """
+    safe = "".join(c for c in username if c.isalnum() or c in "-_").lower()
+    if not safe:
+        st.error("Username may only contain letters, numbers, '-' and '_'.")
+        st.stop()
+
+    trades_file = DATA_DIR / f"trades_{safe}.csv"
+    settings_file = DATA_DIR / f"settings_{safe}.json"
+    return trades_file, settings_file
 
 INPUT_COLS = [
     "trade_date",
@@ -1466,6 +1479,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
