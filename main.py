@@ -1232,7 +1232,7 @@ with tab_new_trade:
                      pd.DataFrame([new_trade])],
                     ignore_index=True,
                 )
-                save_trades(combined)
+                save_trades(combined, DATA_FILE)
                 st.success(f"Saved {t_side} {t_asset}!")
                 st.rerun()
 
@@ -1300,7 +1300,7 @@ with tab_history:
             },
         )
         if st.button("Save Changes", type="primary"):
-            save_trades(edited_df)
+            save_trades(edited_df, DATA_FILE)
             st.success("History updated.")
             st.rerun()
 
@@ -1487,6 +1487,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
