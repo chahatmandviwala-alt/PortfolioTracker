@@ -849,6 +849,9 @@ with st.sidebar:
     st.divider()
     st.caption(f"Logged in as: `{username}`")
 
+if st.button("Logout", type="secondary", help="Sign out of your account"):
+    st.logout()
+
 recalc_fx = base_ccy != _last_base
 
 trades_df = load_trades(base_ccy, recalc_fx=recalc_fx, data_file=DATA_FILE)
@@ -1510,6 +1513,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
