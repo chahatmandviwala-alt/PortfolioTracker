@@ -1462,7 +1462,7 @@ with tab_tax:
 
     # ========= 3. RENDER TABLE + SUMMARY =========
     if pl_df.empty:
-        st.info(f"No realized P&L found between {fy_start} and {fy_end}.")
+        st.info(f"No realized P&L between {fy_start} and {fy_end}.")
     else:
         total_pl = pl_df["realized"].sum()
         pl_df = pl_df.sort_values("realized", ascending=False)
@@ -1522,6 +1522,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
