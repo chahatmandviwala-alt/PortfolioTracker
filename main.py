@@ -760,7 +760,7 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # =========================
 
 # --- User selection on MAIN PAGE ---
-st.header("👤 User")
+st.header("👤 Log In")
 username = st.text_input("Username", key="username").strip()
 
 if not username:
@@ -1492,6 +1492,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
