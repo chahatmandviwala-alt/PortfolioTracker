@@ -70,44 +70,81 @@ st.markdown("""
 <style>
 /* Compact top header with KPIs */
 .mobile-header {
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.6rem;
 }
 
+/* Bigger, clean title */
 .mobile-header-title {
-    font-size: 1.35rem;   /* bigger title */
+    font-size: 1.65rem;
     font-weight: 700;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.55rem;
 }
 
-/* KPI strip */
+/* KPI container */
 .kpi-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 10px;
+    gap: 10px 12px;
 }
 
-/* Each KPI card */
+/* Clean KPI cards */
 .kpi {
-    flex: 1 1 calc(50% - 10px); /* 2 per row on phones */
-    border-radius: 8px;
-    padding: 6px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
+    flex: 1 1 calc(50% - 12px);
+    border-radius: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15); /* subtle but visible */
+    background: rgba(255, 255, 255, 0.02);       /* almost flat */
+    text-align: center;
 }
 
+/* Icons */
+.kpi-icon {
+    display: block;
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+}
+
+/* Label */
 .kpi-label {
-    font-size: 0.75rem;   /* slightly larger label */
-    opacity: 0.7;
+    font-size: 0.85rem;
+    opacity: 0.8;
     white-space: nowrap;
 }
 
+/* Value */
 .kpi-value {
-    font-size: 1.15rem;   /* larger important number */
+    font-size: 1.35rem;
     font-weight: 700;
     margin-top: 2px;
+    line-height: 1.2;
 }
 
-/* On desktops stretch all 4 in one row */
+/* Value color accents */
+.kpi-main .kpi-value {
+    color: #4ea8ff; /* blue */
+}
+
+.kpi-invested .kpi-value {
+    color: #ffb347; /* orange */
+}
+
+.kpi-positive .kpi-value {
+    color: #19c37d; /* green */
+}
+
+.kpi-negative .kpi-value {
+    color: #ff4b4b; /* red */
+}
+
+.kpi-neutral .kpi-value {
+    color: #e5e5e5; /* gray */
+}
+
+.kpi-assets .kpi-value {
+    color: #a78bfa; /* purple */
+}
+
+/* Desktop: 4 in a row */
 @media (min-width: 800px) {
     .kpi {
         flex: 1 1 0;
@@ -115,6 +152,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 DATA_FILE = Path("trades.csv")
 SETTINGS_FILE = Path("settings.json")
@@ -860,7 +898,7 @@ st.markdown("---")
 
 # MAIN TABS
 tab_portfolio, tab_new_trade, tab_history, tab_tax = st.tabs(
-    ["📊 Holdings", "➕ New Trade", "📜 History", "🧾 Realized P/L"]
+    ["📊 Holdings", "➕ New Trade", "📜 Trade History", "🧾 Realized P/L"]
 )
 
 # --- TAB 1: PORTFOLIO ---
@@ -1222,28 +1260,66 @@ with tab_history:
 
 # --- TAB 4: TAX / P&L ---
 with tab_tax:
-    # 1. Date Controls
-    col_d1, col_d2, col_d3 = st.columns([1, 1, 2])
-    today = datetime.today()
+    today = datetime.today().date()
     default_start = date(today.year, 1, 1)
 
-    with col_d1:
-        fy_start = st.date_input("Start Date", value=default_start)
-    with col_d2:
-        fy_end = st.date_input("End Date", value=today)
+    # ========= 1. PERIOD + CURRENCY (COMPACT) =========
+    top_col1, top_col2 = st.columns([2, 1])
 
-    # 2. Currency Selector
-    with col_d3:
-        pnl_mode = st.radio(
-            "Reporting Currency",
-            [f"Base ({base_ccy})", "Original Trade Currency"],
-            horizontal=True,
+    with top_col1:
+        # Period presets instead of always-visible date inputs
+        period_option = st.selectbox(
+            "Period",
+            ["Year to date", "Last calendar year", "Last 12 months", "Custom range"],
+            index=0,
         )
+
+        if period_option == "Year to date":
+            fy_start = default_start
+            fy_end = today
+
+        elif period_option == "Last calendar year":
+            last_year = today.year - 1
+            fy_start = date(last_year, 1, 1)
+            fy_end = date(last_year, 12, 31)
+
+        elif period_option == "Last 12 months":
+            fy_end = today
+            # naive 12 months back; good enough for UI
+            fy_start = date(today.year - (1 if today.month == 12 else 0),
+                            today.month % 12 + 1, 1)
+            # That’s a bit “calendar-ish” – if you prefer exact 365 days:
+            # fy_start = today - timedelta(days=365)
+
+        else:  # "Custom range"
+            with st.expander("Custom date range", expanded=True):
+                dcol1, dcol2 = st.columns(2)
+                with dcol1:
+                    fy_start = st.date_input(
+                        "Start",
+                        value=default_start,
+                    )
+                with dcol2:
+                    fy_end = st.date_input(
+                        "End",
+                        value=today,
+                    )
+
+        # Small summary line, very compact
+        st.caption(f"From {fy_start} to {fy_end}")
+
+with top_col2:
+    pnl_mode = st.radio(
+        "Reporting Currency",       # label
+        [f"Base ({base_ccy})", "Trade Currency"],
+        key="report_ccy_radio",
+        horizontal=True,        # streamlit tries, but CSS enforces it
+    )
 
     start_dt = datetime.combine(fy_start, datetime.min.time())
     end_dt = datetime.combine(fy_end, datetime.max.time())
 
-    # 3. Compute Logic based on Selection
+    # ========= 2. COMPUTE LOGIC =========
     if "Base" in pnl_mode:
         # Base currency view
         unit_col = "effective_unit_base"
@@ -1303,21 +1379,26 @@ with tab_tax:
             )
         }
 
-    # 4. Render Table
+    # ========= 3. RENDER TABLE + SUMMARY =========
     if pl_df.empty:
         st.info(f"No realized P&L found between {fy_start} and {fy_end}.")
     else:
         total_pl = pl_df["realized"].sum()
         pl_df = pl_df.sort_values("realized", ascending=False)
 
-        # Only show Sum metric if in Base currency
+        # Slim Net P&L (instead of tall metric)
         if "Base" in pnl_mode:
             if hide_values:
                 pl_value = "••••••"
             else:
                 pl_value = f"{total_pl:,.2f}"
 
-            st.metric(f"Net P&L ({base_ccy})", pl_value)
+            net_label = f"Net P&L ({base_ccy})"
+            st.markdown(
+                f"<div style='font-size:0.85rem; opacity:0.8;'>{net_label}</div>"
+                f"<div style='font-size:1.2rem; font-weight:700; margin-bottom:0.2rem;'>{pl_value}</div>",
+                unsafe_allow_html=True,
+            )
         else:
             st.caption(
                 "ℹ️ Total P&L is not summed here because assets may have different trade currencies."
@@ -1333,17 +1414,14 @@ with tab_tax:
 
         final_column_config = {**base_column_config, **currency_col_config}
 
-        # Create a copy so we don't modify pl_df itself
         display_pl = pl_df.copy()
 
         if hide_values:
-            # Hide all numeric values with dots
             display_pl["quantity_sold"] = "••••••"
             display_pl["buy_value"] = "••••••"
             display_pl["sell_value"] = "••••••"
             display_pl["realized"] = "••••••"
         else:
-            # Show nicely formatted numbers as strings
             display_pl["quantity_sold"] = display_pl["quantity_sold"].apply(
                 lambda x: f"{x:.2f}"
             )
