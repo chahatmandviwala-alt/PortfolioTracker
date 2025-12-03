@@ -759,11 +759,22 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # UI LAYOUT
 # =========================
 
-# Load settings and determine if we need FX recalculation
-_settings = load_settings()
-_last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
-
 with st.sidebar:
+    # --- User selection ---
+    st.header("👤 User")
+    username = st.text_input("Username", key="username").strip()
+
+    if not username:
+        st.info("Enter a username to load your own portfolio.")
+        st.stop()
+
+    # Map username -> file paths
+    DATA_FILE, SETTINGS_FILE = get_user_paths(username)
+
+    # Load settings for THIS user
+    _settings = load_settings(SETTINGS_FILE)
+    _last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
+
     st.header("⚙️ Settings")
 
     # --- Base settings ---
@@ -778,27 +789,25 @@ with st.sidebar:
             raw = pd.DataFrame(columns=INPUT_COLS)
 
         updated = update_prices_in_trades(raw)
-        save_trades(updated)
+        save_trades(updated, DATA_FILE)
         st.success("Market value updated.")
         st.rerun()
 
     st.divider()
 
-    # --- NEW: Portfolio file import / export ---
-    # Download current trades.csv
+    # --- Portfolio file import / export (per-user) ---
     if DATA_FILE.exists():
         csv_bytes = DATA_FILE.read_bytes()
         st.download_button(
             label="⬇️ Download portfolio",
             data=csv_bytes,
-            file_name="trades.csv",
+            file_name=f"{username}_trades.csv",
             mime="text/csv",
             use_container_width=True,
         )
     else:
         st.caption("No portfolio to download.")
 
-    # Upload & replace trades.csv
     uploaded_file = st.file_uploader(
         "Upload/Replace portfolio",
         type=["csv"],
@@ -808,7 +817,6 @@ with st.sidebar:
     if uploaded_file is not None:
         if st.button("⬆️ Upload", use_container_width=True):
             try:
-                # Replace existing portfolio with uploaded file
                 DATA_FILE.write_bytes(uploaded_file.getvalue())
                 st.success("Portfolio uploaded.")
                 st.rerun()
@@ -1479,6 +1487,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
