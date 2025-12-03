@@ -817,6 +817,8 @@ with st.sidebar:
         st.success("Market value updated.")
         st.rerun()
 
+    st.divider()
+    
     # --- Portfolio file import / export (per-user) ---
     if DATA_FILE.exists():
         csv_bytes = DATA_FILE.read_bytes()
@@ -1509,6 +1511,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
