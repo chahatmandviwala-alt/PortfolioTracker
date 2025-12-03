@@ -11,29 +11,6 @@ import plotly.express as px
 import yfinance as yf
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-st.set_page_config(page_title="Auth Test", page_icon="🔐")
-
-logged_in = getattr(st.user, "is_logged_in", False)
-
-if not logged_in:
-    st.title("🔐 Test Login")
-    st.write("Click below to log in with Google.")
-
-    if st.button("Log in with Google"):
-        st.login()
-    st.stop()
-
-st.success("You are logged in!")
-st.write("Raw st.user:", st.user)
-st.write("As dict (if available):")
-
-try:
-    st.write(st.user.to_dict())
-except Exception as e:
-    st.write(f"Could not convert user to dict: {e!r}")
-
-st.stop()  # <-- IMPORTANT: don't run the rest of your app for this test
-
 
 st.markdown("""
 <style>
@@ -1536,6 +1513,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
