@@ -759,29 +759,34 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # UI LAYOUT
 # =========================
 
+# --- User selection on MAIN PAGE ---
+st.header("👤 User")
+username = st.text_input("Username", key="username").strip()
+
+if not username:
+    st.info("Enter a username to load your own portfolio.")
+    st.stop()
+
+# Map username -> file paths (per user)
+DATA_FILE, SETTINGS_FILE = get_user_paths(username)
+
+# Load settings for THIS user
+_settings = load_settings(SETTINGS_FILE)
+_last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
+
+# --- Sidebar contents (only shown after username is set) ---
 with st.sidebar:
-    # --- User selection ---
-    st.header("👤 User")
-    username = st.text_input("Username", key="username").strip()
-
-    if not username:
-        st.info("Enter a username to load your own portfolio.")
-        st.stop()
-
-    # Map username -> file paths
-    DATA_FILE, SETTINGS_FILE = get_user_paths(username)
-
-    # Load settings for THIS user
-    _settings = load_settings(SETTINGS_FILE)
-    _last_base = _settings.get("base_ccy", DEFAULT_BASE_CCY)
-
     st.header("⚙️ Settings")
 
-    # --- Base settings ---
-    base_ccy = st.text_input("Base Currency", value=_last_base).upper()
-    hide_values = st.toggle("Hide Portfolio Values")
+    # Base settings
+    base_ccy = st.text_input(
+        "Base Currency",
+        value=_last_base,
+        key="base_ccy",          # give it its own key
+    ).upper()
+    hide_values = st.toggle("Hide Portfolio Values", key="hide_values")
 
-    # --- Refresh prices button ---
+    # Refresh prices button
     if st.button("🔄 Refresh market value"):
         if DATA_FILE.exists():
             raw = pd.read_csv(DATA_FILE, sep=";")
@@ -1487,6 +1492,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
