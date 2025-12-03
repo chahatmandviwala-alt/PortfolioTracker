@@ -898,7 +898,7 @@ st.markdown("---")
 
 # MAIN TABS
 tab_portfolio, tab_new_trade, tab_history, tab_tax = st.tabs(
-    ["📊Holdings", "➕New Trade", "📜Trade History", "🧾Realized P/L"]
+    ["📊 Holdings", "➕ New Trade", "📜 Trade History", "🧾 Realized P/L"]
 )
 
 # --- TAB 1: PORTFOLIO ---
@@ -1308,13 +1308,13 @@ with tab_tax:
         # Small summary line, very compact
         st.caption(f"From {fy_start} to {fy_end}")
 
-with top_col2:
-    pnl_mode = st.radio(
-        "Reporting Currency",       # label
-        [f"Base ({base_ccy})", "Trade Currency"],
-        key="report_ccy_radio",
-        horizontal=True,        # streamlit tries, but CSS enforces it
-    )
+    with top_col2:
+        pnl_mode = st.radio(
+            "Reporting Currency",
+            [f"Base ({base_ccy})", "Trade Currency"],
+            key="report_ccy_radio",
+            horizontal=True,
+        )
 
     start_dt = datetime.combine(fy_start, datetime.min.time())
     end_dt = datetime.combine(fy_end, datetime.max.time())
@@ -1441,4 +1441,3 @@ with top_col2:
             hide_index=True,
             column_config=final_column_config,
         )
-
