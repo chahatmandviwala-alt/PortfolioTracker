@@ -828,16 +828,16 @@ with st.sidebar:
 
 recalc_fx = base_ccy != _last_base
 
-trades_df = load_trades(base_ccy, recalc_fx=recalc_fx)
+trades_df = load_trades(base_ccy, recalc_fx=recalc_fx, data_file=DATA_FILE)
 
 # 🔧 NEW: recompute last_price_base for the CURRENT base currency
 if not trades_df.empty and "last_price_trade_ccy" in trades_df.columns:
     trades_df["last_price_base"] = trades_df["last_price_trade_ccy"] * trades_df["fx_to_base"]
 
 if recalc_fx:
-    save_trades(trades_df)
+    save_trades(trades_df, DATA_FILE)
     _settings["base_ccy"] = base_ccy
-    save_settings(_settings)
+    save_settings(_settings, SETTINGS_FILE)
 
 portfolio_df = compute_portfolio(trades_df, base_ccy)
 
@@ -1487,6 +1487,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
