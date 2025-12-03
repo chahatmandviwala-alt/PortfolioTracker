@@ -759,46 +759,29 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # UI LAYOUT
 # =========================
 
-# =========================
-# USER LOGIN (query param + remember in session)
-# =========================
+# If user is not logged in, show a simple login screen
+if not st.user.is_logged_in:
+    st.title("🔐 Portfolio Login")
+    st.write("Please log in with your Google account to access your portfolio.")
 
-params = st.experimental_get_query_params()
-initial_username = params.get("user", [""])[0].strip() if params else ""
+    if st.button("Log in with Google"):
+        st.login()  # uses the [auth] config from secrets
+    st.stop()      # stop here until user logs in
 
-if "username" not in st.session_state:
-    st.session_state.username = initial_username
+# After login, st.user contains info from Google
+user = st.user
 
-# If still no username, show login
-if not st.session_state.username:
-    st.header("🪪 Login")
+# Prefer email as identifier; fall back to sub if needed
+user_id = getattr(user, "email", None) or getattr(user, "sub", None)
 
-    username_input = st.text_input(
-        "Username",
-        key="username_input",
-        value=initial_username,
-    ).strip()
-
-    st.caption("Enter a username to load your portfolio.")
-
-    if username_input:
-        st.session_state.username = username_input
-        # store in URL ?user=...
-        st.experimental_set_query_params(user=username_input)
-        st.rerun()
-
-username = st.session_state.username
-if not username:
+if not user_id:
+    st.error("Could not determine your user identity from the login provider.")
     st.stop()
 
-# After login
-username = st.session_state.username
+st.sidebar.write(f"Logged in as: **{user_id}**")
 
-if not username:
-    st.stop()
-
-# Map username -> file paths (per user)
-DATA_FILE, SETTINGS_FILE = get_user_paths(username)
+# Use email/ID instead of typed username for per-user files
+DATA_FILE, SETTINGS_FILE = get_user_paths(user_id)
 
 # Load settings for THIS user
 _settings = load_settings(SETTINGS_FILE)
@@ -1522,6 +1505,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
