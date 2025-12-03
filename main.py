@@ -153,6 +153,31 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+
+div[data-testid="stTabs"] button {
+    padding-top: 4px !important;     /* default ~10px */
+    padding-bottom: 4px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+
+    font-size: 0.85rem !important;   /* smaller label text */
+    height: 30px !important;         /* reduce full tab height */
+}
+
+div[data-testid="stTabs"] button p {
+    font-size: 0.85rem !important;   /* tab label text */
+}
+
+/* Optional: reduce gap between tabs a bit */
+div[data-testid="stTabs"] button + button {
+    margin-left: 2px !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 
 DATA_FILE = Path("trades.csv")
 SETTINGS_FILE = Path("settings.json")
@@ -898,7 +923,7 @@ st.markdown("---")
 
 # MAIN TABS
 tab_portfolio, tab_new_trade, tab_history, tab_tax = st.tabs(
-    ["📊 Holdings", "➕ New Trade", "📜 Trade History", "🧾 Realized P/L"]
+    ["📊 Holdings", "➕ New Trade", "🧾 Trade History", "💰 Realized P/L"]
 )
 
 # --- TAB 1: PORTFOLIO ---
