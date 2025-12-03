@@ -172,7 +172,7 @@ div[data-testid="stTabs"] button p {
 
 /* Optional: reduce gap between tabs a bit */
 div[data-testid="stTabs"] button + button {
-    margin-left: 2px !important;
+    margin-left: 0.5px !important;
 }
 
 </style>
@@ -1466,3 +1466,4 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
