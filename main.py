@@ -803,7 +803,6 @@ with st.sidebar:
         value=_last_base,
         key="base_ccy",
     ).upper()
-    hide_values = st.toggle("Hide Portfolio Values", key="hide_values")
 
     if st.button("🔄 Refresh market value"):
         if DATA_FILE.exists():
@@ -815,6 +814,8 @@ with st.sidebar:
         save_trades(updated, DATA_FILE)
         st.success("Market value updated.")
         st.rerun()
+
+    hide_values = st.toggle("Hide Portfolio Values", key="hide_values")
 
     st.divider()
     
@@ -1512,6 +1513,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
