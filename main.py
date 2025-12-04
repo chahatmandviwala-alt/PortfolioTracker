@@ -847,7 +847,7 @@ with st.sidebar:
                 st.error(f"Failed to save uploaded file: {e}")
 
     st.divider()
-    st.caption(f"Logged in as: *`{username}`*")
+    st.caption(f"Logged in as: *{username}*")
     if st.button("🚪 Logout", use_container_width=True):
         st.logout()
 
@@ -1512,6 +1512,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
