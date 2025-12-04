@@ -804,7 +804,7 @@ with st.sidebar:
         key="base_ccy",
     ).upper()
 
-    if st.button("🔄 Refresh market value"):
+    if st.button("🔄 Refresh portfolio values"):
         if DATA_FILE.exists():
             raw = pd.read_csv(DATA_FILE, sep=";")
         else:
@@ -1513,6 +1513,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
