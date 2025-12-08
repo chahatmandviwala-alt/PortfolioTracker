@@ -836,7 +836,7 @@ with st.sidebar:
                 border-radius: 0.5rem;
                 background-color: var(--secondary-background-color);
                 color: var(--text-color);
-                text-decoration: none;
+                text-decoration: none !important;  /* remove underline */
                 font-weight: 500;
                 border: 1px solid rgba(255, 255, 255, 0.15);
                 text-align: center;
@@ -852,6 +852,7 @@ with st.sidebar:
                 background-color: rgba(255,255,255,0.15);
                 border-color: rgba(255,255,255,0.25);
                 box-shadow: 0 0.25rem 0.35rem rgba(0,0,0,0.35);
+                text-decoration: none !important;  /* also remove underline on hover */
             }}
             </style>
 
