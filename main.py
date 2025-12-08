@@ -822,12 +822,42 @@ with st.sidebar:
     # --- Portfolio file import / export (per-user) ---
     if DATA_FILE.exists():
         csv_bytes = DATA_FILE.read_bytes()
-        st.download_button(
-            label="⬇️ Download portfolio",
-            data=csv_bytes,
-            file_name=f"{username}_trades.csv",
-            mime="text/csv",
-            use_container_width=True,
+
+        import base64
+        b64 = base64.b64encode(csv_bytes).decode()
+
+        st.markdown(
+            f"""
+            <style>
+            .ios-download-button {{
+                display: inline-block;
+                width: 100%;
+                padding: 0.6rem 1rem;
+                border-radius: 0.5rem;
+                background-color: rgb(240, 242, 246);
+                color: rgb(49, 51, 63);
+                text-decoration: none;
+                font-weight: 500;
+                border: 1px solid rgba(49, 51, 63, 0.2);
+                text-align: center;
+                transition: background-color 0.15s, border-color 0.15s;
+                font-size: 0.9rem;
+                box-sizing: border-box;
+            }}
+            .ios-download-button:hover {{
+                background-color: rgb(225, 227, 230);
+                border-color: rgba(49, 51, 63, 0.35);
+                color: rgb(49, 51, 63);
+            }}
+            </style>
+
+            <a class="ios-download-button"
+               href="data:text/csv;base64,{b64}"
+               download="{username}_trades.csv">
+               ⬇️ Download portfolio
+            </a>
+            """,
+            unsafe_allow_html=True
         )
     else:
         st.caption("No portfolio to download.")
