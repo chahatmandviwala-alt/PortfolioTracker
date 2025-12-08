@@ -832,22 +832,26 @@ with st.sidebar:
             .ios-download-button {{
                 display: inline-block;
                 width: 100%;
-                padding: 0.6rem 1rem;
+                padding: 0.55rem 1rem;
                 border-radius: 0.5rem;
-                background-color: rgb(240, 242, 246);
-                color: rgb(49, 51, 63);
+                background-color: var(--secondary-background-color);
+                color: var(--text-color);
                 text-decoration: none;
                 font-weight: 500;
-                border: 1px solid rgba(49, 51, 63, 0.2);
+                border: 1px solid rgba(255, 255, 255, 0.15);
                 text-align: center;
-                transition: background-color 0.15s, border-color 0.15s;
                 font-size: 0.9rem;
                 box-sizing: border-box;
+
+                /* This creates the "raised" look Streamlit uses */
+                box-shadow: 0 0.15rem 0.3rem rgba(0,0,0,0.25);
+                transition: all 0.15s ease;
             }}
+
             .ios-download-button:hover {{
-                background-color: rgb(225, 227, 230);
-                border-color: rgba(49, 51, 63, 0.35);
-                color: rgb(49, 51, 63);
+                background-color: rgba(255,255,255,0.15);
+                border-color: rgba(255,255,255,0.25);
+                box-shadow: 0 0.25rem 0.35rem rgba(0,0,0,0.35);
             }}
             </style>
 
