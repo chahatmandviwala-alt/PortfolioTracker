@@ -1347,6 +1347,7 @@ with tab_history:
             },
         )
     else:
+        trades_df = trades_df.sort_values("trade_date", ascending=False)
         edited_df = st.data_editor(
             trades_df,
             num_rows="dynamic",
