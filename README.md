@@ -92,7 +92,7 @@ Note: The local desktop application requires a personal Google OAuth configurati
 13. Create a random cookie secret and save it:
 
 ```bash
-openssl rand -base64 32
+python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 14. In your project directory go open: ./streamit/secrets.example.toml
