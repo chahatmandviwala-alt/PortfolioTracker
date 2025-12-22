@@ -16,7 +16,8 @@ https://portfolio-track.streamlit.app/
 - Track portfolio valuation with live market data
 - Calculate realized and unrealized P/L
 - Automatic FX rates from Frankfurter API
-- Calculate P/L in different currencies based on the country of taxation.
+- Calculate P/L in different currencies based on the country of taxation
+- Create a bookmark for Streamlit app on iPhone/Android phones
 
 
 ## Build the app locally
