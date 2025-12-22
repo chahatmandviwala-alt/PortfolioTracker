@@ -865,7 +865,7 @@ if not google_logged_in and not local_logged_in:
     st.title("🔐 Portfolio Login")
     st.markdown("<br>", unsafe_allow_html=True)
 
-    tab_google, tab_local = st.tabs(["Local login", "Google login"])
+    tab_local, tab_google = st.tabs(["Local login", "Google login"])
 
 
     with tab_local:
@@ -1686,6 +1686,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
