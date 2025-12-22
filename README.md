@@ -103,7 +103,7 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 16. Save the secrets.example.toml file and rename it to secrets.toml
 
 
-## Disclosing Security Vulnerabilities
+## Disclosing Vulnerabilities
 
 If you discover an anomaly or calculation mistakes within this application, please send an e-mail to chahat.mandviwala@gmail.com. All vulnerabilities will be promptly addressed.
 
