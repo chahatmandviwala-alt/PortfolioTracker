@@ -8,10 +8,13 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: dummy-commit-main
+  cancel-in-progress: false
+
 jobs:
   dummy-commit:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -24,6 +27,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Sync with remote main
+        run: |
+          git fetch origin main
+          git rebase origin/main
+
       - name: Create dummy change
         run: |
           echo "Last automated commit: $(date -u)" > .dummy-commit.txt
@@ -32,4 +40,4 @@ jobs:
         run: |
           git add .dummy-commit.txt
           git commit -m "chore: automated dummy commit" || echo "No changes to commit"
-          git push origin HEAD:${GITHUB_REF_NAME}
+          git push origin HEAD:main
