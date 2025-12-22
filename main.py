@@ -9,6 +9,10 @@ import requests
 import streamlit as st
 import plotly.express as px
 import yfinance as yf
+import os
+import base64
+import hashlib
+import hmac
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -178,8 +182,89 @@ div[data-testid="stTabs"] button + button {
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown(
+    """
+    <style>
+    /* Align password show/hide icon vertically */
+    div[data-baseweb="input"] > div {
+        align-items: center;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
 DATA_DIR = Path("data")
 DATA_DIR.mkdir(exist_ok=True)
+
+USERS_FILE = DATA_DIR / "users.json"
+
+def load_users() -> dict:
+    if USERS_FILE.exists():
+        try:
+            return json.loads(USERS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def save_users(users: dict) -> None:
+    try:
+        USERS_FILE.write_text(json.dumps(users, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+def _hash_password(password: str, salt_b64: str | None = None) -> tuple[str, str]:
+    """
+    PBKDF2-HMAC-SHA256 with 200k iterations.
+    Returns (salt_b64, hash_b64).
+    """
+    if salt_b64 is None:
+        salt = os.urandom(16)
+        salt_b64 = base64.b64encode(salt).decode("utf-8")
+    else:
+        salt = base64.b64decode(salt_b64.encode("utf-8"))
+
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 200_000)
+    hash_b64 = base64.b64encode(dk).decode("utf-8")
+    return salt_b64, hash_b64
+
+def verify_password(password: str, salt_b64: str, hash_b64: str) -> bool:
+    _, candidate_hash = _hash_password(password, salt_b64=salt_b64)
+    return hmac.compare_digest(candidate_hash, hash_b64)
+
+def create_user(username: str, password: str) -> tuple[bool, str]:
+    """
+    Create a local user (returns success, message).
+    """
+    users = load_users()
+    safe = "".join(c for c in username if c.isalnum() or c in "-_").lower()
+    if not safe:
+        return False, "Username may only contain letters, numbers, '-' and '_'."
+    if safe in users:
+        return False, "User already exists."
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters."
+
+    salt_b64, hash_b64 = _hash_password(password)
+    users[safe] = {"salt": salt_b64, "hash": hash_b64}
+    save_users(users)
+    return True, "Account created."
+
+def authenticate_user(username: str, password: str) -> tuple[bool, str, str | None]:
+    """
+    Returns (ok, message, safe_username).
+    """
+    users = load_users()
+    safe = "".join(c for c in username if c.isalnum() or c in "-_").lower()
+    if not safe:
+        return False, "Invalid username format.", None
+    rec = users.get(safe)
+    if not rec:
+        return False, "Unknown username.", None
+    if verify_password(password, rec["salt"], rec["hash"]):
+        return True, "Logged in.", safe
+    return False, "Incorrect password.", None
 
 DEFAULT_BASE_CCY = "SEK"
 
@@ -763,30 +848,74 @@ def compute_portfolio(trades: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 # REAL LOGIN (Google OIDC)
 # =========================
 
-# Safely check if user is logged in.
-logged_in = getattr(st.user, "is_logged_in", False)
+# =========================
+# LOGIN (Google OIDC OR Local)
+# =========================
 
-if not logged_in:
+# Session flags for local auth
+if "local_logged_in" not in st.session_state:
+    st.session_state["local_logged_in"] = False
+if "local_username" not in st.session_state:
+    st.session_state["local_username"] = None
+
+google_logged_in = getattr(st.user, "is_logged_in", False)
+local_logged_in = bool(st.session_state.get("local_logged_in"))
+
+if not google_logged_in and not local_logged_in:
     st.title("🔐 Portfolio Login")
-    st.write("Please log in with your Google account to access your portfolio.")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("Log in with Google"):
-        st.login()   # uses [auth] from secrets.toml
+    tab_google, tab_local = st.tabs(["Google login", "Local login"])
+
+    with tab_google:
+        if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Log in with Google\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"):
+            st.login()  # uses [auth] from secrets.toml
+
+    with tab_local:
+
+        u = st.text_input("Username", key="local_login_user")
+        p = st.text_input("Password", type="password", key="local_login_pass")
+
+        if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Log in\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"):
+            ok, msg, safe_user = authenticate_user(u, p)
+            if ok:
+                st.session_state["local_logged_in"] = True
+                st.session_state["local_username"] = safe_user
+                st.success(msg)
+                st.rerun()
+            else:
+                st.error(msg)
+
+        with st.expander("Create a new account"):
+            nu = st.text_input("New username", key="local_new_user")
+            npw = st.text_input("New password", type="password", key="local_new_pass")
+            npw2 = st.text_input("Repeat new password", type="password", key="local_new_pass2")
+
+            if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Create account\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"):
+                if npw != npw2:
+                    st.error("Passwords do not match.")
+                else:
+                    ok, msg = create_user(nu, npw)
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
+
     st.stop()
 
-# At this point, the user should be logged in
-user = st.user
-
-# Prefer email as identifier; fall back to sub
-user_id = getattr(user, "email", None) or getattr(user, "sub", None)
-
-if not user_id:
-    st.error("Could not determine your user identity from the login provider.")
-    st.stop()
-
-# For compatibility with the old code, we keep using `username`
-# Extract the part before "@"
-username = user_id.split("@")[0]
+# Determine username depending on auth mode
+if google_logged_in:
+    user = st.user
+    user_id = getattr(user, "email", None) or getattr(user, "sub", None)
+    if not user_id:
+        st.error("Could not determine your user identity from the login provider.")
+        st.stop()
+    username = user_id.split("@")[0]
+else:
+    username = st.session_state.get("local_username")
+    if not username:
+        st.error("Local login session is missing a username.")
+        st.stop()
 
 # Use this username to get per-user files
 DATA_FILE, SETTINGS_FILE = get_user_paths(username)
@@ -885,7 +1014,13 @@ with st.sidebar:
     st.divider()
     st.markdown(f":blue[User: **{username}**]")
     if st.button("🚪 Logout", use_container_width=True):
-        st.logout()
+        if getattr(st.user, "is_logged_in", False):
+            st.logout()
+        else:
+            st.session_state["local_logged_in"] = False
+            st.session_state["local_username"] = None
+            st.rerun()
+
 
 recalc_fx = base_ccy != _last_base
 
