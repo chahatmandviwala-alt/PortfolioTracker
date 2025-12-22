@@ -1,40 +1,25 @@
-name: Dummy auto-commit (every 5 hours)
+name: Auto Dummy Commit
 
 on:
   schedule:
-    - cron: "0 */5 * * *"
-  workflow_dispatch:
-
-permissions:
-  contents: write
-  pull-requests: write
-
-concurrency:
-  group: dummy-auto-commit
-  cancel-in-progress: false
+    # This runs every 5 hours (at minute 0 of every 5th hour)
+    - cron: '0 */5 * * *'
+  workflow_dispatch: # Allows you to run it manually for testing
 
 jobs:
-  dummy:
+  commit:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Update dummy file
+      - name: Make dummy change
         run: |
-          echo "Last automated commit: $(date -u)" > .dummy-commit.txt
-
-      - name: Create/Update PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: automation/dummy-commit
-          base: main
-          delete-branch: false
-          commit-message: "chore: automated dummy commit"
-          title: "chore: automated dummy commit"
-          body: |
-            Automated update to .dummy-commit.txt.
-            Scheduled every 5 hours by GitHub Actions.
+          date > last_commit.txt
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add last_commit.txt
+          git commit -m "Automated dummy commit: $(date)"
+          git push
