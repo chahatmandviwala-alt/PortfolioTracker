@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout (full history)
+      - name: Checkout repository (full history)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -28,7 +28,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Reset local main to latest origin/main
+      - name: Sync with remote main
         run: |
           git fetch origin main
           git checkout main
@@ -38,8 +38,8 @@ jobs:
         run: |
           echo "Last automated commit: $(date -u)" > .dummy-commit.txt
 
-      - name: Commit and push (with lease)
+      - name: Commit and push
         run: |
           git add .dummy-commit.txt
           git commit -m "chore: automated dummy commit" || echo "No changes to commit"
-          git push --force-with-lease origin main
+          git push origin main --force-with-lease
