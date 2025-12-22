@@ -2,9 +2,9 @@ name: Auto Dummy Commit
 
 on:
   schedule:
-    # This runs every 5 hours (at minute 0 of every 5th hour)
+    # Runs at minute 0 of every 5th hour
     - cron: '0 */5 * * *'
-  workflow_dispatch: # Allows you to run it manually for testing
+  workflow_dispatch: # Allows you to run it manually from the "Actions" tab
 
 jobs:
   commit:
@@ -14,12 +14,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Fetches all history so rebase can resolve conflicts properly
+          fetch-depth: 0
 
       - name: Make dummy change
         run: |
-          date > last_commit.txt
+          # Create/Update the dummy file
+          date > .dummy-commit.txt
+          
+          # Configure Git
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add last_commit.txt
-          git commit -m "Automated dummy commit: $(date)"
-          git push
+          
+          # Stage and commit
+          git add .dummy-commit.txt
+          git commit -m "chore: automated dummy commit $(date)"
+          
+          # Pull latest changes from remote to avoid [rejected] error
+          # --rebase puts your dummy commit on top of existing work
+          git pull --rebase origin main
+          
+          # Push the changes
+          git push origin main
