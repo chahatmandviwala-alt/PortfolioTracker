@@ -98,7 +98,7 @@ Note: The local build of this application requires a personal Google OAuth confi
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
-14. In your project directory go open: ./streamit/secrets.example.toml
+14. In your project directory open file: ./streamit/secrets.example.toml
 
 15. Edit the secrets.example.toml file with the information obtianed in steps 11 to 13
 
