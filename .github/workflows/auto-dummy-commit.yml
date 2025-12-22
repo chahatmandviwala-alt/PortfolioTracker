@@ -1,4 +1,4 @@
-name: Automatic Dummy Commit
+name: Dummy auto-commit (every 5 hours)
 
 on:
   schedule:
@@ -10,36 +10,31 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: dummy-commit
+  group: dummy-auto-commit
   cancel-in-progress: false
 
 jobs:
-  dummy-commit:
+  dummy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository (default branch)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Configure Git identity
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Create dummy change
+      - name: Update dummy file
         run: |
           echo "Last automated commit: $(date -u)" > .dummy-commit.txt
 
-      - name: Create or update pull request
+      - name: Create/Update PR
         uses: peter-evans/create-pull-request@v6
         with:
+          branch: automation/dummy-commit
+          base: main
+          delete-branch: false
           commit-message: "chore: automated dummy commit"
           title: "chore: automated dummy commit"
           body: |
             Automated update to .dummy-commit.txt.
-            Triggered by GitHub Actions schedule/workflow_dispatch.
-          branch: "automation/dummy-commit"
-          base: "main"
-          delete-branch: true
+            Scheduled every 5 hours by GitHub Actions.
