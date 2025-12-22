@@ -867,9 +867,6 @@ if not google_logged_in and not local_logged_in:
 
     tab_google, tab_local = st.tabs(["Local login", "Google login"])
 
-    with tab_google:
-        if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Log in with Google\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"):
-            st.login()  # uses [auth] from secrets.toml
 
     with tab_local:
 
@@ -900,6 +897,11 @@ if not google_logged_in and not local_logged_in:
                         st.success(msg)
                     else:
                         st.error(msg)
+
+    
+    with tab_google:
+        if st.button("\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0Log in with Google\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0"):
+            st.login()  # uses [auth] from secrets.toml
 
     st.stop()
 
@@ -1684,6 +1686,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
