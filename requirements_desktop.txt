@@ -7,3 +7,4 @@ requests
 plotly
 altair
 yfinance
+Authlib>=1.3.2
