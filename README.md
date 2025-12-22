@@ -63,7 +63,7 @@ pythom main_app.py
 
 Note: The local desktop requires a personal Google OAuth configuration for using the Login with Google option. Use the Local login option or follow the steps below to create your own credentials and update the ./streamlit/secrets.example.toml file.
 
-# Create Google OAuth Credentials
+## Create Google OAuth Credentials
 
 1. Go to Google Cloud Console: https://console.cloud.google.com/
 
