@@ -2,7 +2,7 @@
 
 An app to track investments in stocks, ETFs, Funds, and Crypto.
 
-![Dashboard view](docs/img.png)
+![Alt text](docs/img.jpg)
 
 
 ## Description
