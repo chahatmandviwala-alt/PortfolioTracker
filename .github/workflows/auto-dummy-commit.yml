@@ -1,0 +1,32 @@
+name: Automatic Dummy Commit
+
+on:
+  schedule:
+    # Runs every 6 hours
+    - cron: "0 */5 * * *"
+  workflow_dispatch:
+
+jobs:
+  dummy-commit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create dummy change
+        run: |
+          echo "Last automated commit: $(date -u)" > .dummy-commit.txt
+
+      - name: Commit and push
+        run: |
+          git add .dummy-commit.txt
+          git commit -m "chore: automated dummy commit" || echo "No changes to commit"
+          git push
