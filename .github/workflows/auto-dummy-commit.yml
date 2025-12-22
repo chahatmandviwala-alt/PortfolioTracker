@@ -7,9 +7,10 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
-  group: dummy-commit-main
+  group: dummy-commit
   cancel-in-progress: false
 
 jobs:
@@ -17,29 +18,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository (full history)
+      - name: Checkout repository (default branch)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: true
 
       - name: Configure Git identity
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync with remote main
-        run: |
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
-
       - name: Create dummy change
         run: |
           echo "Last automated commit: $(date -u)" > .dummy-commit.txt
 
-      - name: Commit and push
-        run: |
-          git add .dummy-commit.txt
-          git commit -m "chore: automated dummy commit" || echo "No changes to commit"
-          git push origin main --force-with-lease
+      - name: Create or update pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: automated dummy commit"
+          title: "chore: automated dummy commit"
+          body: |
+            Automated update to .dummy-commit.txt.
+            Triggered by GitHub Actions schedule/workflow_dispatch.
+          branch: "automation/dummy-commit"
+          base: "main"
+          delete-branch: true
