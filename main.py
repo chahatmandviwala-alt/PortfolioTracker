@@ -563,7 +563,24 @@ def save_trades(df: pd.DataFrame, data_file: Path) -> None:
 
 # ============ LIVE PRICE UPDATER ============
 
-def update_prices_in_trades(df: pd.DataFrame) -> pd.DataFrame:
+@st.cache_data(show_spinner=False, ttl=3600)
+def fetch_latest_fx(from_ccy: str, to_ccy: str) -> float:
+    from_ccy = (from_ccy or "").upper().strip()
+    to_ccy = (to_ccy or "").upper().strip()
+    if not from_ccy or not to_ccy or from_ccy == to_ccy:
+        return 1.0
+
+    url = "https://api.frankfurter.dev/v1/latest"
+    try:
+        resp = requests.get(url, params={"base": from_ccy, "symbols": to_ccy}, timeout=5)
+        resp.raise_for_status()
+        data = resp.json()
+        rate = float(data["rates"][to_ccy])
+        return rate if rate > 0 else 1.0
+    except Exception:
+        return 1.0
+
+def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
     """
     Takes the raw trades DataFrame (with 'ticker' & 'fx_to_base'),
     fetches latest prices from yfinance using the 'ticker' column,
@@ -572,6 +589,22 @@ def update_prices_in_trades(df: pd.DataFrame) -> pd.DataFrame:
     Returns a NEW DataFrame (does not modify in-place).
     """
     d = df.copy()
+
+    base_ccy = (base_ccy or "").upper().strip()
+
+    ccy_list = (
+        d.get("trade_ccy", pd.Series([], dtype=str))
+         .astype(str).str.upper().str.strip()
+         .replace({"": None, "nan": None, "NaN": None})
+         .dropna().unique().tolist()
+    )
+
+    spot_fx_map = {}
+    for ccy in ccy_list:
+        if not ccy or ccy == base_ccy:
+            spot_fx_map[ccy] = 1.0
+        else:
+            spot_fx_map[ccy] = fetch_latest_fx(ccy, base_ccy)
 
     # Make sure columns exist
     if "ticker" not in d.columns:
@@ -649,20 +682,17 @@ def update_prices_in_trades(df: pd.DataFrame) -> pd.DataFrame:
 
     # --- write prices back into df ---
     for idx, row in d.iterrows():
-        ticker = str(row.get("ticker", "")).strip()
-        if not ticker:
+        price = row.get("last_price_trade_ccy", None)
+
+        try:
+            price = float(price)
+        except (TypeError, ValueError):
             continue
 
-        price = price_map.get(ticker)
-        if price is None:
-            # leave whatever is there
-            continue
+        trade_ccy = str(row.get("trade_ccy", "")).upper().strip()
+        fx_spot = float(spot_fx_map.get(trade_ccy, 1.0) or 1.0)
 
-        d.at[idx, "last_price_trade_ccy"] = price
-
-        # Use existing fx_to_base (already in your CSV) to convert
-        fx = float(row.get("fx_to_base", 1.0) or 1.0)
-        d.at[idx, "last_price_base"] = price * fx
+        d.at[idx, "last_price_base"] = price * fx_spot
 
     return d
 
@@ -941,7 +971,7 @@ with st.sidebar:
         else:
             raw = pd.DataFrame(columns=INPUT_COLS)
 
-        updated = update_prices_in_trades(raw)
+        updated = update_prices_in_trades(raw, base_ccy=base_ccy)
         save_trades(updated, DATA_FILE)
         st.success("Market value updated.")
         st.rerun()
@@ -1027,10 +1057,6 @@ with st.sidebar:
 recalc_fx = base_ccy != _last_base
 
 trades_df = load_trades(base_ccy, recalc_fx=recalc_fx, data_file=DATA_FILE)
-
-# 🔧 NEW: recompute last_price_base for the CURRENT base currency
-if not trades_df.empty and "last_price_trade_ccy" in trades_df.columns:
-    trades_df["last_price_base"] = trades_df["last_price_trade_ccy"] * trades_df["fx_to_base"]
 
 if recalc_fx:
     save_trades(trades_df, DATA_FILE)
@@ -1686,6 +1712,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
