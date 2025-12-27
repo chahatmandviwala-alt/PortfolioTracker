@@ -13,6 +13,7 @@ import os
 import base64
 import hashlib
 import hmac
+import streamlit-aggrid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -1352,26 +1353,30 @@ with tab_portfolio:
                 "Share (%)",
             ]
 
-            st.dataframe(
+            from st_aggrid import AgGrid, GridOptionsBuilder
+
+            gb = GridOptionsBuilder.from_dataframe(portfolio_df[display_cols])
+
+            gb.configure_column("Asset", pinned="left")
+            gb.configure_column("Position", header_name="Qty", width=90)
+            gb.configure_column("LTP", width=100)
+            gb.configure_column("Avg Price", width=120)
+            gb.configure_column("Market Value", width=130)
+            gb.configure_column("Invested (Base)", header_name="Cost basis", width=130)
+            gb.configure_column("Share (%)", width=100)
+
+            gb.configure_grid_options(domLayout="normal")
+
+            grid_options = gb.build()
+
+            AgGrid(
                 portfolio_df[display_cols],
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Asset": st.column_config.TextColumn("Asset", width="medium"),
-                    "Position": st.column_config.TextColumn("Qty", width="small"),
-                    "LTP": st.column_config.TextColumn("LTP", width="small"),
-                    "Avg Price": st.column_config.TextColumn("Avg Price", width="small"),
-                    "Market Value": st.column_config.TextColumn(
-                        "Market value", width="small"
-                    ),
-                    "Invested (Base)": st.column_config.TextColumn(
-                        "Cost basis", width="small"
-                    ),
-                    "Share (%)": st.column_config.NumberColumn(
-                        "Share (%)", format="%.2f%%", width="small"
-                    ),
-                },
+                gridOptions=grid_options,
+                fit_columns_on_grid_load=False,
+                height=420,
+                theme="streamlit",
             )
+
 
 # --- TAB 2: REGISTER NEW TRADE ---
 with tab_new_trade:
@@ -1740,6 +1745,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
