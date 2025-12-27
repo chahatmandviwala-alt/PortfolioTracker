@@ -582,16 +582,21 @@ def fetch_latest_fx(from_ccy: str, to_ccy: str) -> float:
 
 def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
     """
-    Takes the raw trades DataFrame (with 'ticker' & 'fx_to_base'),
-    fetches latest prices from yfinance using the 'ticker' column,
-    and fills 'last_price_trade_ccy' and 'last_price_base'.
+    Refreshes last trade prices (LTP) in the asset's trade currency via yfinance
+    and computes base-currency prices using spot FX.
 
-    Returns a NEW DataFrame (does not modify in-place).
+    Updates/creates:
+      - last_price_trade_ccy  (LTP in trade currency)
+      - last_price_base       (LTP converted to base currency using spot FX)
+
+    Returns a NEW DataFrame (does not modify input in-place).
     """
     d = df.copy()
-
     base_ccy = (base_ccy or "").upper().strip()
 
+    # -------------------------
+    # 1) Build spot FX map ONCE
+    # -------------------------
     ccy_list = (
         d.get("trade_ccy", pd.Series([], dtype=str))
          .astype(str).str.upper().str.strip()
@@ -599,70 +604,86 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
          .dropna().unique().tolist()
     )
 
-    spot_fx_map = {}
+    spot_fx_map: dict[str, float] = {}
     for ccy in ccy_list:
         if not ccy or ccy == base_ccy:
             spot_fx_map[ccy] = 1.0
         else:
             spot_fx_map[ccy] = fetch_latest_fx(ccy, base_ccy)
 
-    # Make sure columns exist
+    # -------------------------
+    # 2) Ensure required columns
+    # -------------------------
     if "ticker" not in d.columns:
         d["ticker"] = ""
     if "last_price_trade_ccy" not in d.columns:
-        d["last_price_trade_ccy"] = 0.0
+        d["last_price_trade_ccy"] = float("nan")
     if "last_price_base" not in d.columns:
-        d["last_price_base"] = 0.0
+        d["last_price_base"] = float("nan")
 
-    # Collect unique, non-empty tickers
+    # ------------------------------------
+    # 3) Collect unique tickers to refresh
+    # ------------------------------------
     tickers = (
-        d["ticker"]
-        .astype(str)
-        .str.strip()
-        .replace({"": None, "nan": None, "NaN": None})
-        .dropna()
-        .unique()
-        .tolist()
+        d["ticker"].astype(str).str.strip()
+         .replace({"": None, "nan": None, "NaN": None})
+         .dropna().unique().tolist()
     )
 
     if not tickers:
         return d
 
-    # --- inner helper: fetch price for ONE ticker (trade ccy) ---
+    # ---------------------------------------------------
+    # 4) Inner helper: fetch "latest" price for one ticker
+    # ---------------------------------------------------
     def fetch_one(ticker: str) -> tuple[str, float | None]:
-        price = None
+        price: float | None = None
         try:
             t = yf.Ticker(ticker)
 
-            # fast_info first
-            try:
-                fi = getattr(t, "fast_info", None)
-                if fi is not None:
-                    for attr_name in ["last_price", "regularMarketPrice", "last_price_raw"]:
-                        if price is not None:
-                            break
-                        # attr-style
-                        try:
-                            val = getattr(fi, attr_name, None)
-                            if val is not None:
-                                price = float(val)
-                        except Exception:
-                            pass
-                        # dict-style
-                        if price is None and isinstance(fi, dict):
-                            val = fi.get(attr_name)
-                            if val is not None:
-                                price = float(val)
-            except Exception:
-                pass
+            # Try fast_info (fastest / often most reliable)
+            fi = getattr(t, "fast_info", None)
+            if fi is not None:
+                candidates = []
+                if isinstance(fi, dict):
+                    candidates = [
+                        fi.get("last_price"),
+                        fi.get("regularMarketPrice"),
+                        fi.get("lastPrice"),
+                        fi.get("last_price_raw"),
+                    ]
+                else:
+                    candidates = [
+                        getattr(fi, "last_price", None),
+                        getattr(fi, "regularMarketPrice", None),
+                        getattr(fi, "last_price_raw", None),
+                    ]
 
-            # fallback to info
+                for v in candidates:
+                    if v is None:
+                        continue
+                    try:
+                        price = float(v)
+                        break
+                    except Exception:
+                        pass
+
+            # Fallback to info
             if price is None:
                 try:
                     info = t.info
-                    val = info.get("regularMarketPrice")
-                    if val is not None:
-                        price = float(val)
+                    v = info.get("regularMarketPrice")
+                    if v is not None:
+                        price = float(v)
+                except Exception:
+                    pass
+
+            # Final fallback: last close from recent history
+            if price is None:
+                try:
+                    hist = t.history(period="5d", interval="1d")
+                    if not hist.empty:
+                        price = float(hist["Close"].dropna().iloc[-1])
                 except Exception:
                     pass
 
@@ -671,23 +692,30 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 
         return ticker, price
 
-    # --- fetch all prices in parallel ---
+    # ------------------------------
+    # 5) Fetch all prices in parallel
+    # ------------------------------
     price_map: dict[str, float | None] = {}
     max_workers = min(8, len(tickers))
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        future_map = {ex.submit(fetch_one, t): t for t in tickers}
+        future_map = {ex.submit(fetch_one, tkr): tkr for tkr in tickers}
         for fut in as_completed(future_map):
             ticker, price = fut.result()
             price_map[ticker] = price
 
-    # --- write prices back into df ---
+    # --------------------------------------------
+    # 6) Write prices back + compute base currency
+    # --------------------------------------------
     for idx, row in d.iterrows():
-        price = row.get("last_price_trade_ccy", None)
-
-        try:
-            price = float(price)
-        except (TypeError, ValueError):
+        ticker = str(row.get("ticker", "")).strip()
+        if not ticker:
             continue
+
+        price = price_map.get(ticker)
+        if price is None:
+            continue
+
+        d.at[idx, "last_price_trade_ccy"] = price
 
         trade_ccy = str(row.get("trade_ccy", "")).upper().strip()
         fx_spot = float(spot_fx_map.get(trade_ccy, 1.0) or 1.0)
@@ -695,7 +723,6 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
         d.at[idx, "last_price_base"] = price * fx_spot
 
     return d
-
 
 # =========================
 # CALCULATION ENGINES
@@ -1712,6 +1739,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
