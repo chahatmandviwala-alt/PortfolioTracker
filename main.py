@@ -581,16 +581,6 @@ def fetch_latest_fx(from_ccy: str, to_ccy: str) -> float:
         return 1.0
 
 def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
-    """
-    Refreshes last trade prices (LTP) in the asset's trade currency via yfinance
-    and computes base-currency prices using spot FX.
-
-    Updates/creates:
-      - last_price_trade_ccy  (LTP in trade currency)
-      - last_price_base       (LTP converted to base currency using spot FX)
-
-    Returns a NEW DataFrame (does not modify input in-place).
-    """
     d = df.copy()
     base_ccy = (base_ccy or "").upper().strip()
 
@@ -611,62 +601,52 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
         else:
             spot_fx_map[ccy] = fetch_latest_fx(ccy, base_ccy)
 
-    # -------------------------
-    # 2) Ensure required columns
-    # -------------------------
+    # ------------------------------------
+    # 2) Collect unique tickers to refresh
+    # ------------------------------------
     if "ticker" not in d.columns:
-        d["ticker"] = ""
-    if "last_price_trade_ccy" not in d.columns:
-        d["last_price_trade_ccy"] = float("nan")
-    if "last_price_base" not in d.columns:
-        d["last_price_base"] = float("nan")
+        return d
 
-    # ------------------------------------
-    # 3) Collect unique tickers to refresh
-    # ------------------------------------
     tickers = (
         d["ticker"].astype(str).str.strip()
-         .replace({"": None, "nan": None, "NaN": None})
-         .dropna().unique().tolist()
+        .replace({"": None, "nan": None, "NaN": None})
+        .dropna().unique().tolist()
     )
 
     if not tickers:
         return d
 
     # ---------------------------------------------------
-    # 4) Inner helper: fetch "latest" price for one ticker
+    # 3) Inner helper: fetch "latest" price for one ticker
     # ---------------------------------------------------
     def fetch_one(ticker: str) -> tuple[str, float | None]:
         price: float | None = None
         try:
             t = yf.Ticker(ticker)
 
-            # Try fast_info (fastest / often most reliable)
+            # Try fast_info (usually fastest / most reliable)
             fi = getattr(t, "fast_info", None)
             if fi is not None:
+                # yfinance fast_info can behave as an object or dict
                 candidates = []
                 if isinstance(fi, dict):
                     candidates = [
                         fi.get("last_price"),
                         fi.get("regularMarketPrice"),
                         fi.get("lastPrice"),
-                        fi.get("last_price_raw"),
                     ]
                 else:
                     candidates = [
                         getattr(fi, "last_price", None),
                         getattr(fi, "regularMarketPrice", None),
-                        getattr(fi, "last_price_raw", None),
                     ]
-
                 for v in candidates:
-                    if v is None:
-                        continue
-                    try:
-                        price = float(v)
-                        break
-                    except Exception:
-                        pass
+                    if v is not None:
+                        try:
+                            price = float(v)
+                            break
+                        except Exception:
+                            pass
 
             # Fallback to info
             if price is None:
@@ -683,6 +663,7 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
                 try:
                     hist = t.history(period="5d", interval="1d")
                     if not hist.empty:
+                        # last available close
                         price = float(hist["Close"].dropna().iloc[-1])
                 except Exception:
                     pass
@@ -693,18 +674,18 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
         return ticker, price
 
     # ------------------------------
-    # 5) Fetch all prices in parallel
+    # 4) Fetch all prices in parallel
     # ------------------------------
     price_map: dict[str, float | None] = {}
     max_workers = min(8, len(tickers))
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        future_map = {ex.submit(fetch_one, tkr): tkr for tkr in tickers}
+        future_map = {ex.submit(fetch_one, t): t for t in tickers}
         for fut in as_completed(future_map):
             ticker, price = fut.result()
             price_map[ticker] = price
 
     # --------------------------------------------
-    # 6) Write prices back + compute base currency
+    # 5) Write prices back + compute base currency
     # --------------------------------------------
     for idx, row in d.iterrows():
         ticker = str(row.get("ticker", "")).strip()
@@ -719,10 +700,10 @@ def update_prices_in_trades(df: pd.DataFrame, base_ccy: str) -> pd.DataFrame:
 
         trade_ccy = str(row.get("trade_ccy", "")).upper().strip()
         fx_spot = float(spot_fx_map.get(trade_ccy, 1.0) or 1.0)
-
         d.at[idx, "last_price_base"] = price * fx_spot
 
     return d
+
 
 # =========================
 # CALCULATION ENGINES
@@ -1739,6 +1720,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
