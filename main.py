@@ -13,7 +13,6 @@ import os
 import base64
 import hashlib
 import hmac
-import streamlit-aggrid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -1745,6 +1744,7 @@ with tab_tax:
             hide_index=True,
             column_config=final_column_config,
         )
+
 
 
 
