@@ -1,11 +1,11 @@
-name: Build & attach Windows exe to Release
+name: Build & attach Windows portable zip to Release
 
 on:
   release:
     types: [published]
 
 permissions:
-  contents: write  # required to upload assets to the release with GITHUB_TOKEN :contentReference[oaicite:2]{index=2}
+  contents: write
 
 jobs:
   build-and-upload:
@@ -32,23 +32,31 @@ jobs:
           if (Test-Path requirements.txt) { pip install -r requirements.txt }
           pip install pyinstaller
 
-      - name: Build onefile exe (windowed)
+      - name: Build onedir (portable)
         shell: pwsh
         run: |
           pyinstaller `
             --noconfirm `
             --clean `
             --name "PortfolioTracker" `
-            --onefile `
+            --onedir `
             --windowed `
             --collect-all streamlit `
             --add-data ".streamlit;.streamlit" `
             main_desktop_app.py
 
-      - name: Upload exe to the GitHub Release
+      - name: Create portable zip
+        shell: pwsh
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          $zip = "PortfolioTracker-$tag-windows-portable.zip"
+          Compress-Archive -Path "dist\PortfolioTracker\*" -DestinationPath $zip -Force
+          echo "ZIP_NAME=$zip" >> $env:GITHUB_ENV
+
+      - name: Upload zip to the GitHub Release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = "${{ github.event.release.tag_name }}"
-          gh release upload $tag "dist\PortfolioTracker.exe" --clobber
+          gh release upload $tag "$env:ZIP_NAME" --clobber
