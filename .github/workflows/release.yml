@@ -1,0 +1,54 @@
+name: Build & attach Windows exe to Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write  # required to upload assets to the release with GITHUB_TOKEN :contentReference[oaicite:2]{index=2}
+
+jobs:
+  build-and-upload:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements_desktop.txt
+            requirements.txt
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path requirements_desktop.txt) { pip install -r requirements_desktop.txt }
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+          pip install pyinstaller
+
+      - name: Build onefile exe (windowed)
+        shell: pwsh
+        run: |
+          pyinstaller `
+            --noconfirm `
+            --clean `
+            --name "PortfolioTracker" `
+            --onefile `
+            --windowed `
+            --collect-all streamlit `
+            --add-data ".streamlit;.streamlit" `
+            main_desktop_app.py
+
+      - name: Upload exe to the GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          gh release upload $tag "dist\PortfolioTracker.exe" --clobber
