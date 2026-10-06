@@ -60,7 +60,7 @@ python -m streamlit run main.py
 Alternatively run locally in a desktop application window:
 
 ```bash
-pythom main_app.py
+python main_app.py
 ```
 
 
